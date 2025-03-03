@@ -5,6 +5,14 @@ volumes:
   evolution_store:
   evolution_instances:
 
+networks:
+  n8n_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
+
 services:
   postgres:
     image: postgres:16
@@ -24,6 +32,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      n8n_network:
+        ipv4_address: 172.20.0.2
+
   redis:
     image: redis:latest
     container_name: redis_n8n
@@ -37,6 +49,10 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+    networks:
+      n8n_network:
+        ipv4_address: 172.20.0.3
+
   n8n:
     image: docker.n8n.io/n8nio/n8n
     restart: always
@@ -55,8 +71,6 @@ services:
       - WEBHOOK_TUNNEL_URL=http://localhost:5678
     ports:
       - 5678:5678
-    links:
-      - postgres
     volumes:
       - n8n_storage:/home/node/.n8n
     depends_on:
@@ -64,6 +78,10 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    networks:
+      n8n_network:
+        ipv4_address: 172.20.0.4
+
   evolution-api:
     container_name: evolution_api
     image: atendai/evolution-api
@@ -78,3 +96,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    networks:
+      n8n_network:
+        ipv4_address: 172.20.0.5
